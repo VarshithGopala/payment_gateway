@@ -1,0 +1,56 @@
+services:
+  - type: web
+    runtime: node
+    name: secure-payments-hub-preview
+    rootDir: payments-hub
+    plan: free
+    buildCommand: npm install --omit=dev
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: PUBLIC_BASE_URL
+        value: https://secure-payments-hub-preview.onrender.com
+      - key: INTERNAL_BASE_URL
+        value: http://127.0.0.1:10000
+      - key: DATA_DIR
+        value: /tmp/payments-hub-data
+      - key: PAYMENT_PROVIDER
+        value: mock
+      - key: SITES
+        value: demo-store
+      - key: SITE_DEMO_STORE_NAME
+        value: Launch Kit Store
+      - key: SITE_DEMO_STORE_SECRET
+        generateValue: true
+      - key: SITE_DEMO_STORE_ORIGINS
+        value: "{PUBLIC_BASE_URL}"
+      - key: SITE_DEMO_STORE_FULFILLMENT_URL
+        value: "{PUBLIC_BASE_URL}/store/api/payments/webhook"
+      - key: SITE_DEMO_STORE_FULFILLMENT_SECRET
+        generateValue: true
+      - key: STORE_ENABLED
+        value: true
+      - key: STORE_SITE_ID
+        value: demo-store
+      - key: STORE_NAME
+        value: Launch Kit Store
+      - key: STORE_PRODUCT_NAME
+        value: Website Launch Kit
+      - key: STORE_PRODUCT_DESCRIPTION
+        value: A secure starter purchase wired through your reusable payments hub.
+      - key: STORE_PRODUCT_PRICE_CENTS
+        value: 49900
+      - key: STORE_CURRENCY
+        value: inr
+      - key: STORE_CUSTOMER_EMAIL
+        value: customer@example.com
+      - key: REQUEST_SIGNATURE_TOLERANCE_SECONDS
+        value: 300
+      - key: STRIPE_SIGNATURE_TOLERANCE_SECONDS
+        value: 300
+      - key: TRUST_PROXY
+        value: true

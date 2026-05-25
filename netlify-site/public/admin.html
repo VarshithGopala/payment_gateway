@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Payment Admin</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: #f5f7fa;
+        color: #172033;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+      }
+      main {
+        width: min(880px, 100%);
+        background: #ffffff;
+        border: 1px solid #d7dee9;
+        border-radius: 8px;
+        padding: 30px;
+        box-shadow: 0 18px 48px rgba(23, 32, 51, 0.08);
+      }
+      .eyebrow {
+        margin: 0 0 10px;
+        color: #57708e;
+        font-size: 14px;
+        font-weight: 800;
+        text-transform: uppercase;
+      }
+      h1 {
+        margin: 0 0 14px;
+        font-size: 32px;
+      }
+      p {
+        color: #4d5b73;
+        line-height: 1.6;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 14px;
+        margin-top: 22px;
+      }
+      .box {
+        border: 1px solid #d7dee9;
+        border-radius: 8px;
+        padding: 16px;
+        background: #fbfcfe;
+      }
+      .box strong {
+        display: block;
+        margin-bottom: 8px;
+      }
+      label {
+        display: block;
+        margin: 16px 0 7px;
+        font-weight: 800;
+      }
+      input,
+      select {
+        width: 100%;
+        min-height: 46px;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        padding: 10px 12px;
+        font: inherit;
+      }
+      button {
+        min-height: 44px;
+        border: 0;
+        border-radius: 6px;
+        background: #174ea6;
+        color: white;
+        font-size: 15px;
+        font-weight: 900;
+        cursor: pointer;
+        padding: 0 16px;
+        margin-top: 16px;
+      }
+      .warning {
+        border: 1px solid #ebd889;
+        background: #fff8df;
+        color: #6c5d1f;
+        border-radius: 8px;
+        padding: 14px;
+        margin-top: 20px;
+      }
+      code {
+        background: #edf1f7;
+        border-radius: 4px;
+        padding: 2px 6px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p class="eyebrow">Admin Page</p>
+      <h1>Settlement setup</h1>
+      <p>
+        Real payouts settle to the verified bank account configured in Razorpay. This page does not
+        store raw bank or UPI details because those details must be verified by the payment provider.
+      </p>
+
+      <section class="grid" aria-label="Settlement status">
+        <div class="box">
+          <strong>Razorpay keys</strong>
+          <span id="keyStatus">Checking...</span>
+        </div>
+        <div class="box">
+          <strong>Settlement destination</strong>
+          <span id="settlementLabel">Checking...</span>
+        </div>
+      </section>
+
+      <div class="warning">
+        To change where money arrives, update the settlement bank account inside Razorpay Dashboard
+        after KYC verification. For marketplace payouts to many recipients, use Razorpay Route or
+        Stripe Connect instead of storing bank details here.
+      </div>
+
+      <form id="localForm">
+        <label for="destinationType">Record destination label locally</label>
+        <select id="destinationType">
+          <option value="razorpay-bank">Verified Razorpay bank account</option>
+          <option value="route-account">Razorpay Route linked account</option>
+          <option value="stripe-connect">Stripe Connect account</option>
+        </select>
+        <label for="destinationLabel">Label</label>
+        <input id="destinationLabel" placeholder="Example: HDFC current account ending 1234" />
+        <button type="submit">Save label in this browser</button>
+      </form>
+      <p id="savedStatus"></p>
+
+      <p>
+        Netlify environment variables to set:
+        <code>RAZORPAY_KEY_ID</code>, <code>RAZORPAY_KEY_SECRET</code>,
+        <code>MERCHANT_DISPLAY_NAME</code>, <code>MERCHANT_SETTLEMENT_LABEL</code>.
+      </p>
+    </main>
+    <script>
+      const keyStatus = document.querySelector('#keyStatus');
+      const settlementLabel = document.querySelector('#settlementLabel');
+      const form = document.querySelector('#localForm');
+      const savedStatus = document.querySelector('#savedStatus');
+      const destinationType = document.querySelector('#destinationType');
+      const destinationLabel = document.querySelector('#destinationLabel');
+
+      async function loadConfig() {
+        const response = await fetch('/.netlify/functions/settlement-config');
+        const config = await response.json();
+        keyStatus.textContent = config.razorpayConfigured ? 'Configured' : 'Missing keys';
+        settlementLabel.textContent = config.settlement.label;
+      }
+
+      function loadLocalLabel() {
+        const saved = JSON.parse(localStorage.getItem('settlementLabel') || '{}');
+        destinationType.value = saved.type || 'razorpay-bank';
+        destinationLabel.value = saved.label || '';
+      }
+
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        localStorage.setItem(
+          'settlementLabel',
+          JSON.stringify({ type: destinationType.value, label: destinationLabel.value })
+        );
+        savedStatus.textContent = 'Saved in this browser. Provider settlement still uses Razorpay Dashboard.';
+      });
+
+      loadConfig();
+      loadLocalLabel();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Pay Merchant</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: #f5f7fa;
+        color: #172033;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+      }
+      main {
+        width: min(980px, 100%);
+        display: grid;
+        grid-template-columns: minmax(280px, 1fr) minmax(300px, 420px);
+        gap: 28px;
+        align-items: center;
+      }
+      .visual {
+        min-height: 520px;
+        border: 1px solid #d7dee9;
+        border-radius: 8px;
+        background:
+          radial-gradient(circle at 20% 18%, rgba(38, 132, 255, 0.16), transparent 32%),
+          linear-gradient(135deg, #e9eef7, #ffffff 56%, #dce8f6);
+        display: grid;
+        place-items: center;
+        overflow: hidden;
+      }
+      .receipt {
+        width: min(70%, 360px);
+        min-height: 430px;
+        border-radius: 8px;
+        background: #17324d;
+        color: white;
+        padding: 30px;
+        display: grid;
+        align-content: space-between;
+        box-shadow: 0 28px 70px rgba(23, 50, 77, 0.28);
+        transform: rotate(-2deg);
+      }
+      .mark {
+        width: 74px;
+        height: 74px;
+        border-radius: 8px;
+        background: #4db6ac;
+        display: grid;
+        place-items: center;
+        color: #102a43;
+        font-weight: 900;
+        font-size: 30px;
+      }
+      .lines {
+        display: grid;
+        gap: 12px;
+      }
+      .lines span {
+        height: 12px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.72);
+      }
+      .lines span:nth-child(2) {
+        width: 72%;
+      }
+      .lines span:nth-child(3) {
+        width: 48%;
+        background: #f4c95d;
+      }
+      .panel {
+        background: white;
+        border: 1px solid #d7dee9;
+        border-radius: 8px;
+        padding: 28px;
+        box-shadow: 0 18px 48px rgba(23, 32, 51, 0.08);
+      }
+      .eyebrow {
+        margin: 0 0 10px;
+        color: #57708e;
+        font-size: 14px;
+        font-weight: 800;
+        text-transform: uppercase;
+      }
+      h1 {
+        margin: 0 0 14px;
+        font-size: 34px;
+        line-height: 1.08;
+      }
+      p {
+        color: #4d5b73;
+        line-height: 1.6;
+      }
+      label {
+        display: block;
+        margin: 16px 0 7px;
+        font-weight: 800;
+      }
+      input {
+        width: 100%;
+        min-height: 46px;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        padding: 10px 12px;
+        font: inherit;
+      }
+      button {
+        width: 100%;
+        min-height: 48px;
+        border: 0;
+        border-radius: 6px;
+        background: #174ea6;
+        color: white;
+        font-size: 16px;
+        font-weight: 900;
+        cursor: pointer;
+        margin-top: 20px;
+      }
+      button:disabled {
+        opacity: 0.68;
+        cursor: progress;
+      }
+      .status {
+        min-height: 24px;
+        margin: 14px 0 0;
+      }
+      .success {
+        color: #23655e;
+        font-weight: 800;
+      }
+      .error {
+        color: #a33a2a;
+        font-weight: 800;
+      }
+      @media (max-width: 780px) {
+        body {
+          padding: 16px;
+          place-items: start center;
+        }
+        main {
+          grid-template-columns: 1fr;
+        }
+        .visual {
+          min-height: 300px;
+        }
+        .receipt {
+          min-height: 260px;
+        }
+        h1 {
+          font-size: 29px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="visual" aria-label="Payment receipt preview">
+        <div class="receipt" aria-hidden="true">
+          <div class="mark">₹</div>
+          <div>
+            <h2>Secure Payment</h2>
+            <div class="lines">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section class="panel">
+        <p class="eyebrow">Client Payment Page</p>
+        <h1>Enter amount and pay</h1>
+        <p>Payments are processed by Razorpay. Bank OTP, UPI authentication, and card confirmation happen inside Razorpay Checkout.</p>
+        <form id="paymentForm">
+          <label for="amount">Amount in INR</label>
+          <input id="amount" name="amount" type="number" min="1" max="500000" step="1" value="499" required />
+          <label for="name">Name</label>
+          <input id="name" name="name" autocomplete="name" placeholder="Customer name" />
+          <label for="email">Email</label>
+          <input id="email" name="email" type="email" autocomplete="email" placeholder="customer@example.com" />
+          <button id="payButton" type="submit">Pay now</button>
+          <p class="status" id="status" aria-live="polite"></p>
+        </form>
+      </section>
+    </main>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script>
+      const form = document.querySelector('#paymentForm');
+      const button = document.querySelector('#payButton');
+      const status = document.querySelector('#status');
+
+      function setStatus(message, kind = '') {
+        status.className = `status ${kind}`;
+        status.textContent = message;
+      }
+
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        button.disabled = true;
+        setStatus('Creating secure order...');
+
+        try {
+          const formData = new FormData(form);
+          const response = await fetch('/.netlify/functions/create-order', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({
+              amount: formData.get('amount'),
+              name: formData.get('name'),
+              email: formData.get('email'),
+            }),
+          });
+          const order = await response.json();
+          if (!response.ok) {
+            throw new Error(order.error?.message || 'Could not create payment order.');
+          }
+
+          const checkout = new Razorpay({
+            key: order.keyId,
+            amount: order.amount,
+            currency: order.currency,
+            name: order.merchantName,
+            description: 'Client payment',
+            order_id: order.orderId,
+            prefill: {
+              name: formData.get('name') || '',
+              email: formData.get('email') || '',
+            },
+            theme: { color: '#174ea6' },
+            handler: async (paymentResponse) => {
+              setStatus('Verifying payment...');
+              const verifyResponse = await fetch('/.netlify/functions/verify-payment', {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify(paymentResponse),
+              });
+              const verified = await verifyResponse.json();
+              if (!verifyResponse.ok) {
+                throw new Error(verified.error?.message || 'Payment verification failed.');
+              }
+              setStatus(`Payment verified. Payment ID: ${verified.paymentId}`, 'success');
+              button.disabled = false;
+            },
+            modal: {
+              ondismiss: () => {
+                setStatus('Checkout closed. You can try again.');
+                button.disabled = false;
+              },
+            },
+          });
+
+          checkout.open();
+          setStatus('Complete the payment in Razorpay Checkout.');
+        } catch (error) {
+          setStatus(error.message, 'error');
+          button.disabled = false;
+        }
+      });
+    </script>
+  </body>
+</html>
+
